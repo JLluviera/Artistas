@@ -53,7 +53,14 @@ namespace Artistas.Controllers
                 return BadRequest("El artista no puede ser nulo.");
             };
 
-            if(artista.Nombre == null || artista.Nombre.Trim() == "")
+            Artista? artistaContext = _context.Artistas.FirstOrDefault(a => a.Id == id);
+
+            if (artistaContext == null)
+            {
+                return BadRequest("Ese artista no existe");
+            }
+
+            if(artista.Nombre == null || artista.Nombre.Trim() == "" || artista.Nombre == "string")
             {
                 return BadRequest("El nombre del artista no puede estar vacío.");
             }
@@ -77,14 +84,24 @@ namespace Artistas.Controllers
                 idCategoria = artista.idCategoria
             };
 
+            CategoriaArtistas? cat = _context.CategoriaArtistas
+                .FirstOrDefault(c => c.id == artista.idCategoria);
+
+            if (cat == null)
+            {
+                return BadRequest("La categoria no existe");
+            }           
+
             if (id != null)
             {
                 nuevoArtista.Id = (int)id;
                 _context.Artistas.Update(nuevoArtista);
+                
             }
             else
             {
-                 _context.Artistas.Add(nuevoArtista);
+                _context.Artistas.Add(nuevoArtista);
+                cat.Artistas.Add(nuevoArtista);
             }
 
             try
