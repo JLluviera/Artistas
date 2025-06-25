@@ -126,6 +126,15 @@ namespace Artistas.Controllers
                     return BadRequest("No existe el artista");
                 }
 
+            CategoriaArtistas? cat = _context.CategoriaArtistas
+                .FirstOrDefault(c => c.id == artista.idCategoria);
+
+            if (cat != null)
+            {
+                cat.Artistas.Remove(artista);
+            }
+        
+
             _context.Artistas.Remove(artista);
             _context.SaveChanges();
             return Ok("Eliminado");
