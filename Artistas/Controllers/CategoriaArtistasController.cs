@@ -1,7 +1,12 @@
 ﻿using Artistas.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using TuProyecto.Data;
+using Artistas.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Artistas.Models.DTOs;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -9,6 +14,8 @@ namespace Artistas.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
+
     public class CategoriaArtistasController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -21,7 +28,25 @@ namespace Artistas.Controllers
         public IActionResult Get()
         {
             var categorias = _context.CategoriaArtistas
-                            .ToList();
+                            .Include(c => c.Artistas)
+                            .ThenInclude(a => a.Usuario)
+                            .Select (c => new CatArtistaRespuestaDTO 
+                            {
+                                Id = c.id,
+                                Descripcion = c.Descripcion,
+                                ArtistasSimples = c.Artistas.Select(a => new ArtistaRespuestaDTO
+                                {
+                                    Id = a.Id,
+                                    Nombre = a.Nombre,
+                                    Nacionalidad = a.Nacionalidad,
+                                    FechaNacimiento = a.FechaNacimiento,
+                                    Genero = a.Genero,
+                                    NombreUsuario = a.Usuario.NombreUsuario
+                                }).ToList()
+                            }).ToList();
+
+
+
             if (categorias == null || !categorias.Any())
             {
                 return NotFound();
@@ -74,19 +99,20 @@ namespace Artistas.Controllers
 
         // DELETE api/<CategoriaArtistasController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public IActionResult Delete(int id)
         {
             var categoria = _context.CategoriaArtistas
                             .FirstOrDefault(c => c.id == id);
-            if (categoria != null)
+
+            if (categoria == null)
             {
-                _context.CategoriaArtistas.Remove(categoria);
-                _context.SaveChanges();
+                NotFound("No existe la categoria");
             }
-            else
-            {
-                NotFound();
-            }
+
+            _context.CategoriaArtistas.Remove(categoria);
+            _context.SaveChanges();
+            return Ok();
+
         }
     }
 }

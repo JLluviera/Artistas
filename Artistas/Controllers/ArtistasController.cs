@@ -3,11 +3,16 @@ using Artistas.Models;
 using TuProyecto.Data;
 using Artistas.Models.DTOs;
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.Authorization;
+using Artistas.Helpers;
+using Microsoft.DiaSymReader;
+using System.Security.Claims;
 
 namespace Artistas.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ArtistasController : ControllerBase
     {
         private protected readonly AppDbContext _context;
@@ -25,7 +30,7 @@ namespace Artistas.Controllers
 
             if (artistas == null || !artistas.Any())
             {
-                return NotFound();
+                return NotFound("No hay artistas");
             }
 
             return Ok(artistas);
@@ -46,11 +51,69 @@ namespace Artistas.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post([FromBody] ArtistaDTO artista, int? id)
+        public IActionResult Post([FromBody] ArtistaDTO artista)
         {
-            if (artista == null)
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null || userId == string.Empty)
+                return Unauthorized("No se ha encontrado el usuario");
+
+            Usuario? user = _context.Usuarios
+                .FirstOrDefault(u => u.Id == int.Parse(userId));
+
+            if (user == null)
+                return BadRequest("El usuario no existe mas");
+
+            if (ModelState.IsValid == false)
             {
-                return BadRequest("El artista no puede ser nulo.");
+                return BadRequest(ModelState);
+            }
+            ;
+            Artista nuevoArtista = new Artista
+            {
+                Nombre = artista.Nombre,
+                Nacionalidad = artista.Nacionalidad,
+                FechaNacimiento = artista.FechaNacimiento,
+                Genero = artista.Genero,
+                idCategoria = artista.idCategoria
+            };
+            CategoriaArtistas? cat = _context.CategoriaArtistas
+                .FirstOrDefault(c => c.id == artista.idCategoria);
+            if (cat == null)
+            {
+                return BadRequest("La categoria no existe");
+            }
+            cat.Artistas.Add(nuevoArtista);
+
+            nuevoArtista.IdUsuario = user.Id;
+            nuevoArtista.Usuario = user;
+
+            user.ArtistasCreados.Add(nuevoArtista);
+
+            _context.Artistas.Add(nuevoArtista);
+
+            try
+            {
+                _context.SaveChanges();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.InnerException.Message ?? ex.Message);
+            }
+            ;
+        }
+
+
+        [HttpPost("{id}")]
+        public IActionResult Post([FromBody] ArtistaDTO artista, int id)
+        {
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null || userId == string.Empty)
+                return Unauthorized("No se ha encontrado el usuario autorizado");
+
+            if (ModelState.IsValid == false)
+            {
+                return BadRequest(ModelState);
             };
 
             Artista? artistaContext = _context.Artistas.FirstOrDefault(a => a.Id == id);
@@ -59,30 +122,11 @@ namespace Artistas.Controllers
             {
                 return BadRequest("Ese artista no existe");
             }
-
-            if(artista.Nombre == null || artista.Nombre.Trim() == "" || artista.Nombre == "string")
-            {
-                return BadRequest("El nombre del artista no puede estar vacío.");
-            }
-
-            if (artista.Nacionalidad == null || artista.Nacionalidad.Trim() == "")
-            {
-                return BadRequest("La nacionalidad del artista no puede estar vacía.");
-            }
-
-            if(artista.FechaNacimiento == default(DateOnly))
-            {
-                return BadRequest("La fecha de nacimiento del artista no puede ser nula.");
-            }
-
-            var nuevoArtista = new Artista
-            {
-                Nombre = artista.Nombre,
-                Nacionalidad = artista.Nacionalidad,
-                FechaNacimiento = artista.FechaNacimiento,
-                Genero = artista.Genero,
-                idCategoria = artista.idCategoria
-            };
+           
+            artistaContext.Nombre = artista.Nombre;
+            artistaContext.Nacionalidad = artista.Nacionalidad;
+            artistaContext.FechaNacimiento = artista.FechaNacimiento;
+            artistaContext.Genero = artista.Genero;            
 
             CategoriaArtistas? cat = _context.CategoriaArtistas
                 .FirstOrDefault(c => c.id == artista.idCategoria);
@@ -90,24 +134,27 @@ namespace Artistas.Controllers
             if (cat == null)
             {
                 return BadRequest("La categoria no existe");
-            }           
+            };
 
-            if (id != null)
+            if (artistaContext.idCategoria != artista.idCategoria)
             {
-                nuevoArtista.Id = (int)id;
-                _context.Artistas.Update(nuevoArtista);
-                
-            }
-            else
-            {
-                _context.Artistas.Add(nuevoArtista);
-                cat.Artistas.Add(nuevoArtista);
+                CategoriaArtistas? catVieja = _context.CategoriaArtistas
+                    .FirstOrDefault(c => c.id == artistaContext.idCategoria);
+                if (catVieja != null)
+                {
+                    catVieja.Artistas.Remove(artistaContext);
+                }
+                cat.Artistas.Add(artistaContext);
             }
 
+            artistaContext.idCategoria = artista.idCategoria;
+
+            _context.Artistas.Update(artistaContext);        
+            
             try
             {
                 _context.SaveChanges();
-                return Ok(artista);
+                return Ok();
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);

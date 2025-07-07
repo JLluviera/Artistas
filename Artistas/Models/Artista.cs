@@ -16,10 +16,16 @@ namespace Artistas.Models
         public DateOnly FechaNacimiento { get; set; }
 
         public string Genero { get; set; }
-        [Required]
-        public int idCategoria { get; set; }
 
-        public CategoriaArtistas CategoriaArtista { get; set; }
+        public int? idCategoria { get; set; }
+
+        public CategoriaArtistas? CategoriaArtista { get; set; }
+
+        public int? IdUsuario { get; set; }
+
+        public Usuario? Usuario { get; set; }
+
+        public List<Espectaculo>? Espectaculos { get; set; } = new List<Espectaculo>();
 
     }
 }

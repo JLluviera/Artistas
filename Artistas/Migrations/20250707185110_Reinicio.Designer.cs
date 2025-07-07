@@ -12,8 +12,8 @@ using TuProyecto.Data;
 namespace Artistas.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250623231855_relaciones")]
-    partial class relaciones
+    [Migration("20250707185110_Reinicio")]
+    partial class Reinicio
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,18 +40,25 @@ namespace Artistas.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("IdUsuario")
+                        .HasColumnType("int");
+
                     b.Property<string>("Nacionalidad")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("idCategoria")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IdUsuario");
 
                     b.HasIndex("idCategoria");
 
@@ -68,27 +75,65 @@ namespace Artistas.Migrations
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("id");
 
                     b.ToTable("CategoriaArtistas");
                 });
 
+            modelBuilder.Entity("Artistas.Models.Usuario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NombreUsuario")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Usuarios");
+                });
+
             modelBuilder.Entity("Artistas.Models.Artista", b =>
                 {
-                    b.HasOne("Artistas.Models.CategoriaArtistas", "CategoriaArtistas")
+                    b.HasOne("Artistas.Models.Usuario", "Usuario")
+                        .WithMany("ArtistasCreados")
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Artistas.Models.CategoriaArtistas", "CategoriaArtista")
                         .WithMany("Artistas")
                         .HasForeignKey("idCategoria")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
-                    b.Navigation("CategoriaArtistas");
+                    b.Navigation("CategoriaArtista");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Artistas.Models.CategoriaArtistas", b =>
                 {
                     b.Navigation("Artistas");
+                });
+
+            modelBuilder.Entity("Artistas.Models.Usuario", b =>
+                {
+                    b.Navigation("ArtistasCreados");
                 });
 #pragma warning restore 612, 618
         }

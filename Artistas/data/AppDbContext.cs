@@ -9,24 +9,39 @@ namespace TuProyecto.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // Define el DbSet para tu modelo
         public DbSet<Artista> Artistas { get; set; }
 
         public DbSet<CategoriaArtistas> CategoriaArtistas { get; set; }
 
+        public DbSet<Usuario> Usuarios { get; set; }
+
+        public DbSet<Espectaculo> Espectaculos { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Artista>()
-                .HasOne(a => a.CategoriaArtista)
-                .WithMany(c => c.Artistas)
-                .HasForeignKey(a => a.idCategoria)
-                .OnDelete(DeleteBehavior.NoAction);
+                 .HasOne(a => a.CategoriaArtista)
+                 .WithMany(c => c.Artistas)
+                 .HasForeignKey(a => a.idCategoria)
+                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<CategoriaArtistas>()
-                .HasMany(c => c.Artistas)
-                .WithOne(a => a.CategoriaArtista)
-                .HasForeignKey(a => a.idCategoria)
-                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Artista>()
+                .HasOne(a => a.Usuario)
+                .WithMany(u => u.ArtistasCreados)
+                .HasForeignKey(a => a.IdUsuario)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Usuario>()
+                .HasMany(u => u.ArtistasCreados)
+                .WithOne(a => a.Usuario)
+                .HasForeignKey(a => a.IdUsuario)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Espectaculo>()
+                .HasOne(e => e.Artista)
+                .WithMany(a => a.Espectaculos)
+                .HasForeignKey(e => e.IdArtista)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
