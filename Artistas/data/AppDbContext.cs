@@ -31,12 +31,6 @@ namespace TuProyecto.Data
                 .HasForeignKey(a => a.IdUsuario)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<Usuario>()
-                .HasMany(u => u.ArtistasCreados)
-                .WithOne(a => a.Usuario)
-                .HasForeignKey(a => a.IdUsuario)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<Espectaculo>()
                 .HasOne(e => e.Artista)
                 .WithMany(a => a.Espectaculos)

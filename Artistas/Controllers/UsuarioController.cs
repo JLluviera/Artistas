@@ -64,7 +64,7 @@ namespace Artistas.Controllers
                     return BadRequest("El usuario no existe");
                 };
 
-                if (ContraVieja == null || HelperConstraseña.Verificar(ContraVieja, usuarioContext.PasswordHash))
+                if (ContraVieja == null || !HelperConstraseña.Verificar(ContraVieja, usuarioContext.PasswordHash))
                 {
                     return BadRequest("La contraseña antigua no coincide con la registrada en el sistema");
                 }
@@ -79,6 +79,7 @@ namespace Artistas.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Get()
         {
             var Usuarios = _context.Usuarios
@@ -122,6 +123,31 @@ namespace Artistas.Controllers
             RespuestaLoginTokenDTO token = new RespuestaLoginTokenDTO();
             token.Token = _autentica.CrearToken(usuario);
             return Ok(token.Token);
+        }
+
+        [HttpDelete("id")]
+        public IActionResult Delete(int id, string contrasena)
+        {
+            if (string.IsNullOrEmpty(contrasena))
+            {
+                return BadRequest("La contraseña no puede ser nula o vacía");
+            };
+
+            Usuario? usuario = _context.Usuarios.FirstOrDefault(u => u.Id == id);
+
+            if (usuario == null)
+            {
+                return NotFound("Usuario no encontrado");
+            };
+
+            if(!HelperConstraseña.Verificar(contrasena, usuario.PasswordHash))
+            {
+                return Unauthorized("Contraseña incorrecta");
+            };
+
+            _context.Usuarios.Remove(usuario);
+            _context.SaveChanges();
+            return Ok("Usuario eliminado correctamente");
         }
 
     }

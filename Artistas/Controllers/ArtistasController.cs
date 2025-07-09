@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Artistas.Helpers;
 using Microsoft.DiaSymReader;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace Artistas.Controllers
 {
@@ -26,6 +27,21 @@ namespace Artistas.Controllers
         public IActionResult Get()
         {
             var artistas = _context.Artistas
+                            .Select(artistas => new ArtistaEspectDTO
+                            {
+                                Id = artistas.Id,
+                                Nombre = artistas.Nombre,
+                                Nacionalidad = artistas.Nacionalidad,
+                                FechaNacimiento = artistas.FechaNacimiento,
+                                Genero = artistas.Genero,
+                                NombreUsuario = artistas.Usuario != null ? artistas.Usuario.NombreUsuario : "Usuario eliminado",
+                                Espectaculos = artistas.Espectaculos != null ? artistas.Espectaculos.Select(e => new EspectaculoDTO
+                                {
+                                    Nombre = e.Nombre,
+                                    FechaHora = e.FechaHora,
+                                    IdArtista = e.IdArtista
+                                }).ToList() : new List<EspectaculoDTO>()
+                            })
                             .ToList();
 
             if (artistas == null || !artistas.Any())
@@ -104,7 +120,7 @@ namespace Artistas.Controllers
         }
 
 
-        [HttpPost("{id}")]
+        [HttpPut("{id}")]
         public IActionResult Post([FromBody] ArtistaDTO artista, int id)
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
