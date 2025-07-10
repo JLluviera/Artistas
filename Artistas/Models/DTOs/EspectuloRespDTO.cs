@@ -11,5 +11,7 @@
         public string GeneroArtista { get; set; }
 
         public string NacionalidadArtista { get; set; }
+
+        public string NombreUsuario { get; set; }   
     }
 }

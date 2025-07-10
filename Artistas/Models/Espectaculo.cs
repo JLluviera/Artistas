@@ -14,5 +14,9 @@ namespace Artistas.Models
         public int IdArtista { get; set; }
 
         public Artista Artista { get; set; }
+
+        public int? IdUsuarioEspc { get; set; }
+
+        public Usuario Usuario { get; set; }
     }
 }

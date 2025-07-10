@@ -36,6 +36,12 @@ namespace TuProyecto.Data
                 .WithMany(a => a.Espectaculos)
                 .HasForeignKey(e => e.IdArtista)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Espectaculo>()
+                .HasOne(e => e.Usuario)
+                .WithMany(u => u.EspectaculosCreados)
+                .HasForeignKey(e => e.IdUsuarioEspc)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

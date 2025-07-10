@@ -5,6 +5,7 @@ using TuProyecto.Data;
 using Microsoft.EntityFrameworkCore;
 using Artistas.Models;
 using Artistas.Models.DTOs;
+using System.Security.Claims;
 
 namespace Artistas.Controllers
 {
@@ -34,7 +35,8 @@ namespace Artistas.Controllers
                             IdArtista = e.IdArtista,
                             NombreArtista = e.Artista.Nombre,
                             GeneroArtista = e.Artista.Genero,
-                            NacionalidadArtista = e.Artista.Nacionalidad
+                            NacionalidadArtista = e.Artista.Nacionalidad,
+                            NombreUsuario = e.Artista.Usuario != null ? e.Artista.Usuario.NombreUsuario : "Usuario eliminado"
                         })
                         .ToList();
 
@@ -71,6 +73,19 @@ namespace Artistas.Controllers
         [HttpPost]
         public IActionResult Post([FromBody] EspectaculoDTO espectaculo)
         {
+            int? idUsuario = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+            if (idUsuario == null || idUsuario == 0)
+            {
+                return Unauthorized("No se ha encontrado el usuario.");
+            };
+
+            Usuario? user = _context.Usuarios
+                .FirstOrDefault(u => u.Id == idUsuario);
+
+            if( user == null )
+                return Unauthorized("El usuario no existe.");
+
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -88,7 +103,8 @@ namespace Artistas.Controllers
                 Nombre = espectaculo.Nombre,
                 FechaHora = espectaculo.FechaHora,
                 IdArtista = espectaculo.IdArtista,
-                Artista = artista
+                Artista = artista,
+                IdUsuarioEspc = idUsuario
             };
 
             _context.Espectaculos.Add(nuevoEspectaculo);
@@ -99,6 +115,19 @@ namespace Artistas.Controllers
         [HttpPut]
         public IActionResult Put([FromBody] EspectModDTO espectaculo)
         {
+            int? idUsuario = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+            if (idUsuario == null || idUsuario == 0)
+            {
+                return Unauthorized("No se ha encontrado el usuario.");
+            }
+            ;
+
+            Usuario? user = _context.Usuarios
+                .FirstOrDefault(u => u.Id == idUsuario);
+
+            if (user == null)
+                return Unauthorized("El usuario no existe.");
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -107,9 +136,15 @@ namespace Artistas.Controllers
             var espect = _context.Espectaculos
                 .Include(e => e.Artista)
                 .FirstOrDefault(e => e.Id == espectaculo.Id);
+            
             if (espect == null)
             {
                 return BadRequest("El espectáculo no existe.");
+            };
+
+            if(espect.IdUsuarioEspc != idUsuario)
+            {
+                return Unauthorized("No tienes permiso para modificar este espectáculo.");
             };
 
             var artista = _context.Artistas.FirstOrDefault(a => a.Id == espectaculo.IdArtista);

@@ -15,5 +15,7 @@ namespace Artistas.Models
         public string PasswordHash { get; set; }
 
         public List<Artista>? ArtistasCreados { get; set; } = new List<Artista>();
+
+        public List<Espectaculo> EspectaculosCreados { get; set; } = new List<Espectaculo>();
     }
 }
